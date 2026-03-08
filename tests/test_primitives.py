@@ -177,6 +177,7 @@ def test_region_rectangle(w, h, tmpfile, img_support):
 def test_region_arc_segments(start_angle_deg, sweep_angle_deg, tmpfile, img_support):
     """Test Region objects with arc segments."""
     with object_test(tmpfile, img_support, epsilon=1e-2) as gbr:
+        print(f'{start_angle_deg=} {sweep_angle_deg=}')
         start_angle = math.radians(start_angle_deg)
         sweep_angle = math.radians(sweep_angle_deg)
         r = 15
@@ -185,11 +186,11 @@ def test_region_arc_segments(start_angle_deg, sweep_angle_deg, tmpfile, img_supp
         region = Region(unit=MM)
 
         region.outline.append((0, 0))
-        region.outline.append((r * math.cos(start_angle), r * math.sin(start_angle)))
         region.outline.append((r * math.cos(start_angle + sweep_angle), r * math.sin(start_angle + sweep_angle)))
+        region.outline.append((r * math.cos(start_angle), r * math.sin(start_angle)))
         region.outline.append((0, 0))
         region.arc_centers.append(None)
-        region.arc_centers.append(None)
         region.arc_centers.append((True, (0, 0)))
+        region.arc_centers.append(None)
 
         gbr.objects.append(region)

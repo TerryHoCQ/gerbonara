@@ -307,6 +307,7 @@ class Region(GraphicObject):
 
     def _offset(self, dx, dy):
         self.outline = [ (x+dx, y+dy) for x, y in self.outline ]
+        self.arc_centers = [ (c[0], (c[1][0]+dx, c[1][1]+dy)) if c else None for c in self.arc_centers ]
 
     def _rotate(self, angle, cx=0, cy=0):
         self.outline = [ gp.rotate_point(x, y, angle, cx, cy) for x, y in self.outline ]
