@@ -81,7 +81,8 @@ class Circle(GraphicPrimitive):
 
     def to_arc_poly(self):
         return ArcPoly([(self.x-self.r, self.y), (self.x+self.r, self.y)],
-                       [(True, (self.x, self.y)), (True, (self.x, self.y))])
+                       [(True, (self.x, self.y)), (True, (self.x, self.y))],
+                       polarity_dark=self.polarity_dark)
 
 
 @dataclass(frozen=True)
@@ -218,24 +219,30 @@ class Line(GraphicPrimitive):
         color = fg if self.polarity_dark else bg
         width = f'{self.width:.6}' if not math.isclose(self.width, 0) else '0.01mm'
         return tag('path', d=f'M {float(self.x1):.6} {float(self.y1):.6} L {float(self.x2):.6} {float(self.y2):.6}',
-                fill='none', stroke=color, stroke_width=str(width))
+                fill='none', stroke=color, stroke_width=str(width), stroke_linecap='round')
 
     def to_arc_poly(self):
         l = math.dist((self.x1, self.y1), (self.x2, self.y2))
+        if math.isclose(l, 0):
+            # degenerate case: a zero-length line becomes a circle.
+            return ArcPoly([(self.x1-self.width/2, self.y1), (self.x1+self.width/2, self.y1)],
+                           [(True, (self.x1, self.y1)), (True, (self.x1, self.y1))],
+                           polarity_dark=self.polarity_dark)
+
         dx, dy = self.x2-self.x1, self.y2-self.y1
         nx, ny = -dy/l, dx/l
         rx, ry = nx*self.width/2, ny*self.width/2
         return ArcPoly([
-                    (self.x1+rx, self.y1+ry),
-                    (self.x1-rx, self.y1-ry),
-                    (self.x2-rx, self.y2-ry),
                     (self.x2+rx, self.y2+ry),
+                    (self.x2-rx, self.y2-ry),
+                    (self.x1-rx, self.y1-ry),
+                    (self.x1+rx, self.y1+ry),
                 ], [
-                    (True, (self.x1, self.y1)),
-                    None,
                     (True, (self.x2, self.y2)),
                     None,
-                ])
+                    (True, (self.x1, self.y1)),
+                    None,
+                ], polarity_dark=self.polarity_dark)
 
 
 @dataclass(frozen=True)
@@ -276,25 +283,32 @@ class Arc(GraphicPrimitive):
         arc = svg_arc((self.x1, self.y1), (self.x2, self.y2), (self.cx, self.cy), self.clockwise)
         width = f'{self.width:.6}' if not math.isclose(self.width, 0) else '0.01mm'
         return tag('path', d=f'M {float(self.x1):.6} {float(self.y1):.6} {arc}',
-                fill='none', stroke=color, stroke_width=width)
+                fill='none', stroke=color, stroke_width=width, stroke_linecap='round')
 
     def to_arc_poly(self):
         r = math.dist((self.x1, self.y1), (self.cx, self.cy))
+
+        if math.isclose(r, 0):
+            # degenerate case: a zero-radius arc becomes a circle.
+            return ArcPoly([(self.x1-self.width/2, self.y1), (self.x1+self.width/2, self.y1)],
+                           [(True, (self.x1, self.y1)), (True, (self.x1, self.y1))],
+                           polarity_dark=self.polarity_dark)
+
         dx1, dy1 = self.x1-self.cx, self.y1-self.cy
         nx1, ny1 = dx1/r * self.width/2, dy1/r * self.width/2
         dx2, dy2 = self.x2-self.cx, self.y2-self.cy
         nx2, ny2 = dx2/r * self.width/2, dy2/r * self.width/2
-        return ArcPoly([
-                    (self.x1+nx1, self.y1+nx1),
-                    (self.x1-nx1, self.y1-nx1),
-                    (self.x2-nx2, self.y2-nx2),
-                    (self.x2+nx2, self.y2+nx2),
-                ], [
-                    (self.clockwise, (self.x1, self.y1)),
+        return ArcPoly([ # vertices
+                    (self.x1+nx1, self.y1+ny1),
+                    (self.x1-nx1, self.y1-ny1),
+                    (self.x2-nx2, self.y2-ny2),
+                    (self.x2+nx2, self.y2+ny2),
+                ], [ # arc segments (direction, center)
+                    (not self.clockwise, (self.x1, self.y1)),
                     (self.clockwise, (self.cx, self.cy)),
                     (self.clockwise, (self.x2, self.y2)),
-                    (self.clockwise, (self.cx, self.cy)),
-                ])
+                    (not self.clockwise, (self.cx, self.cy)),
+                ], polarity_dark=self.polarity_dark)
 
 
 @dataclass(frozen=True)
@@ -323,7 +337,7 @@ class Rectangle(GraphicPrimitive):
             (x - (cw+sh), y + (ch+sw)),
             (x + (cw+sh), y + (ch+sw)),
             (x + (cw+sh), y - (ch+sw)),
-            ])
+            ], polarity_dark=self.polarity_dark)
 
     def to_svg(self, fg='black', bg='white', tag=Tag):
         color = fg if self.polarity_dark else bg

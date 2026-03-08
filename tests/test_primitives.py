@@ -47,8 +47,25 @@ def object_test(tmpfile, img_support, epsilon=1e-4):
 
     out_svg = tmpfile('SVG Output', '.svg')
     with open(out_svg, 'w') as f:
+        # Use inch units here to make sure we and gerbv agree on the exact pixel size of the output since both calculate
+        # it from the DPI setting.
         f.write(str(gbr.to_svg(force_bounds=bounds, arg_unit='inch', fg='black', bg='white')))
 
+    # test primitive to_arc_poly
+    arc_poly_gbr = GerberFile()
+    for obj in gbr.objects:
+        for primitive in obj.to_primitives(MM):
+            poly = primitive.to_arc_poly()
+            arc_poly_gbr.objects.append(Region.from_arc_poly(poly))
+
+    arc_poly_svg = tmpfile('ArcPoly SVG Output', '.svg')
+    with open(arc_poly_svg, 'w') as f:
+        f.write(str(arc_poly_gbr.to_svg(force_bounds=bounds, arg_unit='inch', fg='black', bg='white')))
+
+    arc_poly_png = tmpfile('ArcPoly conversion render', '.png')
+    img_support.svg_to_png(arc_poly_svg, arc_poly_png, dpi=300, bg='white')
+
+    # Reference export via gerber through GerbV
     out_gbr = tmpfile('GBR Output', '.gbr')
     gbr.save(out_gbr)
 
@@ -66,6 +83,11 @@ def object_test(tmpfile, img_support, epsilon=1e-4):
     img_support.svg_to_png(out_svg, out_png, dpi=300, bg='white')
 
     mean, _max, hist = img_support.image_difference(ref_png, out_png, diff_out=tmpfile('Difference', '.png'))
+    assert hist[9] < 1
+    assert mean < epsilon
+    assert hist[3:].sum() < epsilon*hist.size
+
+    mean, _max, hist = img_support.image_difference(out_png, arc_poly_png, diff_out=tmpfile('ArcPoly Difference', '.png'))
     assert hist[9] < 1
     assert mean < epsilon
     assert hist[3:].sum() < epsilon*hist.size

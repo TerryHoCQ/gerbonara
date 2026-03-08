@@ -337,8 +337,9 @@ class Region(GraphicObject):
             ], unit=unit)
 
     @classmethod
-    def from_arc_poly(kls, arc_poly, polarity_dark=True, unit=MM):
-        return kls(arc_poly.outline, arc_poly.arc_centers, polarity_dark=polarity_dark, unit=unit)
+    def from_arc_poly(kls, arc_poly, polarity_dark=None, unit=MM):
+        polarity = arc_poly.polarity_dark if polarity_dark is None else polarity_dark
+        return kls(arc_poly.outline, arc_poly.arc_centers, polarity_dark=polarity, unit=unit)
 
     def append(self, obj):
         if obj.unit != self.unit:
