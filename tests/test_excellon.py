@@ -100,6 +100,28 @@ def test_first_level_idempotence_svg(reference, tmpfile, img_support):
     assert hist[9] == 0
     assert hist[3:].sum() < 5e-5*hist.size
 
+
+@filter_syntax_warnings
+@pytest.mark.parametrize('reference', list(REFERENCE_FILES.items()), indirect=True)
+def test_gerber_conversion(reference, tmpfile, img_support):
+    reference, (unit_spec, _) = reference
+    tmp = tmpfile('Output gerber', '.gbr')
+    ref_svg = tmpfile('Reference SVG render', '.svg')
+    out_svg = tmpfile('Output SVG render', '.svg')
+
+    a = ExcellonFile.open(reference)
+    a.to_gerber().save(tmp)
+    b = GerberFile.open(tmp)
+
+    ref_svg.write_text(str(a.to_svg(fg='black', bg='white')))
+    out_svg.write_text(str(b.to_svg(fg='black', bg='white')))
+
+    mean, _max, hist = img_support.svg_difference(ref_svg, out_svg, diff_out=tmpfile('Difference', '.png'), background='white')
+    assert mean < 2e-4
+    assert hist[9] == 0
+    assert hist[3:].sum() < 2e-4*hist.size
+
+
 @filter_syntax_warnings
 @pytest.mark.parametrize('reference', list(REFERENCE_FILES.items()), indirect=True)
 def test_idempotence(reference, tmpfile):
@@ -122,6 +144,7 @@ def test_idempotence(reference, tmpfile):
     print(f'{f2.import_settings=}')
 
     assert tmp_1.read_text() == tmp_2.read_text()
+
 
 @filter_syntax_warnings
 @pytest.mark.parametrize('reference', list(REFERENCE_FILES.items()), indirect=True)

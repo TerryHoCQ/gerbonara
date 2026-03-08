@@ -30,8 +30,9 @@ from pathlib import Path
 
 from .cam import CamFile, FileSettings
 from .graphic_objects import Flash, Line, Arc
-from .apertures import ExcellonTool
+from .apertures import ExcellonTool, CircleAperture
 from .utils import Inch, MM, to_unit, InterpMode, RegexMatcher
+
 
 class ExcellonContext:
     """ Internal helper class used for tracking graphics state when writing Excellon. """
@@ -268,17 +269,19 @@ class ExcellonFile(CamFile):
         """ Counterpart to :py:meth:`~.rs274x.GerberFile.to_excellon`. Does nothing and returns :py:obj:`self`. """
         return self
 
-    def to_gerber(self, errros='raise'):
+    def to_gerber(self, errors='raise'):
         """ Convert this excellon file into a :py:class:`~.rs274x.GerberFile`. """
+        from .rs274x import GerberFile
         out = GerberFile()
         out.comments = self.comments
 
         apertures = {}
         for obj in self.objects:
-            if not (ap := apertures[obj.tool]):
-                ap = apertures[obj.tool] = CircleAperture(obj.tool.diameter)
+            if not (ap := apertures.get(obj.tool)):
+                ap = apertures[obj.tool] = CircleAperture(obj.tool.diameter, unit=obj.aperture.unit)
 
             out.objects.append(dataclasses.replace(obj, aperture=ap))
+        return out
 
     @property
     def generator(self):
