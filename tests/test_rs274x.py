@@ -614,3 +614,29 @@ def test_syntax_error():
     assert 'test_syntax_error.gbr' in exc_info.value.msg
     assert '7' in exc_info.value.msg # lineno
 
+@filter_syntax_warnings
+@pytest.mark.parametrize('reference', MIN_REFERENCE_FILES, indirect=True)
+def test_invert_polarity(reference, tmpfile, img_support):
+    tmp_gbr = tmpfile('Output gerber', '.gbr')
+
+    gbr = GerberFile.open(reference)
+
+    ref_svg = tmpfile('Reference SVG export', '.svg')
+    with open(ref_svg, 'w') as f:
+        f.write(str(gbr.to_svg(arg_unit='inch', fg='black', bg='white')))
+    ref_png = tmpfile('Reference render', '.png')
+    img_support.svg_to_png(ref_svg, ref_png, dpi=300, bg='white')
+
+    gbr.invert_polarity()
+
+    out_svg = tmpfile('Output SVG export', '.svg')
+    with open(out_svg, 'w') as f:
+        f.write(str(gbr.to_svg(arg_unit='inch', fg='white', bg='black')))
+    out_png = tmpfile('Reference render', '.png')
+    img_support.svg_to_png(out_svg, out_png, dpi=300, bg='white')
+
+    cx, cy = 0, to_gerbv_svg_units(10, unit='inch')
+    mean, _max, hist = img_support.image_difference(ref_png, out_png, diff_out=tmpfile('Difference', '.png'))
+    assert mean < 1e-3
+    assert hist[9] == 0
+
