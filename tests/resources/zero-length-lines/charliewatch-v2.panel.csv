@@ -1,0 +1,12 @@
+"Id";"Designator";"Footprint";"Quantity";"Designation";"Supplier and ref";
+1;"D36,D49,D40,D53,D18,D57,D4,D3,D58,D56,D21,D24,D30,D5,D7,D60,D42,D32,D59,D8,D44,D1,D14,D37,D9,D27,D12,D52,D48,D15,D33,D16,D51,D38,D10,D25,D11,D35,D13,D47,D31,D19,D29,D45,D17,D46,D50,D34,D28,D2,D43,D54,D20,D41,D22,D6,D23,D55,D39,D26";"LED_APHB1608SYKSURKC";60;"LED_APHB1608SYKSURKC";;;
+2;"KiKit_MB_3_15,KiKit_TO_1,KiKit_MB_4_13,KiKit_TO_3,KiKit_MB_4_14,KiKit_MB_2_11,KiKit_MB_1_11,KiKit_MB_3_13,KiKit_MB_1_12,KiKit_MB_4_11,KiKit_MB_2_14,KiKit_MB_2_15,KiKit_TO_2,KiKit_MB_3_11,KiKit_MB_1_13,KiKit_MB_4_12,KiKit_MB_2_13,KiKit_MB_1_14,KiKit_MB_3_14,KiKit_MB_2_12,KiKit_MB_4_15,KiKit_MB_3_12,KiKit_MB_1_15";"NPTH";23;"NPTH";;;
+3;"TST1,RST1,VCC1";"TestPoint_Pad_D1.0mm";3;"TestPoint";;;
+4;"Y1";"Crystal_SMD_MicroCrystal_CM9V-T1A-2Pin_1.6x1.0mm";1;"32.765 KHz";;;
+5;"HD4,HD11,HD10,HD1,HD9,HD5,HD3,HD2,HD12,HD7,HD6,HD8";"LED_0805_2012Metric";12;"LED_0805_2012Metric";;;
+6;"KiKit_FID_T_2,KiKit_FID_T_3,KiKit_FID_T_1,KiKit_FID_B_2,KiKit_FID_B_3,KiKit_FID_B_1";"Fiducial";6;"Fiducial";;;
+7;"U2";"Texas_S-PVQFN-N32_EP3.45x3.45mm_ThermalVias";1;"MSP430G2153IRHB32";;;
+8;"GND1";"TestPoint_Pad_1.0x1.0mm";1;"TestPoint";;;
+9;"BT1";"BatteryHolder_Keystone_3034_1x20mm";1;"Battery_Cell";;;
+10;"SW1";"SW_SPST_EVQP7A";1;"EVQ-P7A01P";;;
+11;"R1";"R_0402_1005Metric";1;"10K";;;

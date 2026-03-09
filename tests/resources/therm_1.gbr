@@ -1,0 +1,52 @@
+G04 Created with the python gerber_writer 0.4.2.19*
+G04 #@! TF.CreationDate,2024-04-07T16:27:54.932609*
+G04 #@! TF.FileFunction,Copper,L1,Top,Signal*
+G04 #@! TF.FilePolarity,Positive*
+G04 From https://gitlab.com/gerbolyze/gerbonara/-/issues/11 *
+%MOMM*%
+%FSLAX36Y36*%
+G75*
+%AMRoundedThermal*
+0 Circular thermal with rounded corners*
+0 $1 outer diameter*
+0 $2 inner diameter*
+0 $3 gap of straight thermal primitive*
+0 $4 rotation angle*
+0 $5 diameter rounding circles*
+0 $6 x coordinate of q1 along h axis circle, rotated*
+0 $7 y coordinate of q1 along h axis circle, rotated*
+0 $8 x coordinate of q1 along v axis circle, rotated*
+0 $9 y coordinate of q1 along v axis circle, rotated*
+7,0,0,$1,$2,$3,$4*
+1,1,$5,$6,$7*
+1,1,$5,-$7,$6*
+1,1,$5,-$6,-$7*
+1,1,$5,$7,-$6*
+1,1,$5,$8,$9*
+1,1,$5,-$9,$8*
+1,1,$5,-$8,-$9*
+1,1,$5,$9,-$8*
+1,0,$2,0,0*
+%
+G04 #@! TA.AperFunction,ThermalReliefPad*
+G04 #@! TAShape,RoundedThermal,1,0.8,0.06,45*
+%ADD10RoundedThermal,1X0.8X0.182911X45X0.103913X0.253521X0.369418X-0.253521X0.369418*%
+G04 #@! TD*
+%LPD*%
+G04 #@! TA.AperFunction,Conductor*
+G36*
+X55000000Y50000000D02*
+G01*
+X60800000Y50000000D01*
+G03*
+X63000000Y52200000I0J2200000D01*
+G01*
+X63000000Y56000000D01*
+X55000000Y56000000D01*
+X55000000Y50000000D01*
+G37*
+G04 #@! TD*
+%LPC*%
+D10*
+X60800000Y52200000D03*
+M02*
