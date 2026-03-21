@@ -423,11 +423,11 @@ class Pad(NetMixin):
 
         elif self.shape == Atom.rect:
             if margin > 0:
-                return ap.ApertureMacroInstance(GenericMacros.rounded_rect,
-                        (self.size.x+2*margin, self.size.y+2*margin,
-                         margin,
-                         0, 0, # no hole
-                         rotation), unit=MM)
+                return GenericMacros.rounded_rect(self.size.x+2*margin,
+                                                  self.size.y+2*margin,
+                                                  margin,
+                                                  0, # no hole
+                                                  rotation)
             else:
                 return ap.RectangleAperture(self.size.x+2*margin, self.size.y+2*margin, unit=MM).rotated(-rotation)
 
@@ -454,28 +454,29 @@ class Pad(NetMixin):
                 # Note: KiCad already uses MM units, so no conversion needed here.
 
                 alpha = math.atan(y / dy) if dy > 0 else 0
-                return ap.ApertureMacroInstance(GenericMacros.isosceles_trapezoid,
-                        (x+dy+2*margin*math.cos(alpha), y+2*margin,
-                         2*dy,
-                         0, 0, # no hole
-                         -rotation + math.pi), unit=MM)
+                return GenericMacros.isosceles_trapezoid(x+dy+2*margin*math.cos(alpha),
+                                                         y+2*margin,
+                                                         2*dy,
+                                                         0, # no hole
+                                                         -rotation + math.pi)
 
             else:
-                return ap.ApertureMacroInstance(GenericMacros.rounded_isosceles_trapezoid,
-                        (x+dy, y,
-                         2*dy, margin,
-                         0, 0, # no hole
-                         -rotation + math.pi), unit=MM)
+                return GenericMacros.rounded_isosceles_trapezoid(x+dy,
+                                                                 y,
+                                                                 2*dy,
+                                                                 margin,
+                                                                 0, # no hole
+                                                                 -rotation + math.pi)
 
         elif self.shape == Atom.roundrect:
             x, y = self.size.x, self.size.y
             r = min(x, y) * self.roundrect_rratio
             if margin > -r:
-                return ap.ApertureMacroInstance(GenericMacros.rounded_rect,
-                        (x+2*margin, y+2*margin,
-                         r+margin,
-                         0, 0, # no hole
-                         rotation), unit=MM)
+                return GenericMacros.rounded_rect(x+2*margin,
+                                                  y+2*margin,
+                                                  r+margin,
+                                                  0, # no hole
+                                                  rotation)
             else:
                 return ap.RectangleAperture(x+margin, y+margin, unit=MM).rotated(-rotation)
 

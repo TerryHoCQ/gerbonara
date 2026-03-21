@@ -21,7 +21,6 @@ import math
 from dataclasses import dataclass, replace, field, fields, InitVar, KW_ONLY
 from functools import lru_cache
 
-from .aperture_macros.parse import GenericMacros
 from .utils import LengthUnit, MM, Inch, sum_bounds
 
 from . import graphic_primitives as gp
@@ -160,7 +159,8 @@ class ExcellonTool(Aperture):
         return self
 
     def to_macro(self, rotation=0):
-        return ApertureMacroInstance(GenericMacros.circle, self._params(unit=MM))
+        from .aperture_macros.parse import GenericMacros
+        return ApertureMacroInstance(GenericMacros.circle, self._params(unit=MM), unit=MM)
 
     def _params(self, unit=None):
         return (self.unit.convert_to(unit, self.diameter),)
@@ -205,7 +205,9 @@ class CircleAperture(Aperture):
                        hole_dia=None if self.hole_dia is None else self.hole_dia*scale)
 
     def to_macro(self, rotation=0):
-        return ApertureMacroInstance(GenericMacros.circle, self._params(unit=MM))
+        from .aperture_macros.parse import GenericMacros
+        return GenericMacros.circle(MM(self.diameter, self.unit),
+                                    MM(self.hole_dia, self.unit))
 
     def _params(self, unit=None):
         return _strip_right(
@@ -260,12 +262,11 @@ class RectangleAperture(Aperture):
                        hole_dia=None if self.hole_dia is None else self.hole_dia*scale)
 
     def to_macro(self, rotation=0):
-        return ApertureMacroInstance(GenericMacros.rect,
-                (MM(self.w, self.unit),
-                    MM(self.h, self.unit),
-                    MM(self.hole_dia, self.unit) or 0,
-                    0,
-                    rotation))
+        from .aperture_macros.parse import GenericMacros
+        return GenericMacros.rect(MM(self.w, self.unit),
+                                  MM(self.h, self.unit),
+                                  MM(self.hole_dia, self.unit),
+                                  self.rotation)
 
     def _params(self, unit=None):
         return _strip_right(
@@ -329,12 +330,11 @@ class ObroundAperture(Aperture):
             rotation -= -math.pi/2
             inst = replace(self, w=self.h, h=self.w, hole_dia=self.hole_dia)
 
-        return ApertureMacroInstance(GenericMacros.obround,
-                (MM(inst.w, self.unit),
-                 MM(inst.h, self.unit),
-                 MM(inst.hole_dia, self.unit) or 0,
-                 0,
-                 rotation))
+        from .aperture_macros.parse import GenericMacros
+        return GenericMacros.obround(MM(inst.w, self.unit),
+                                     MM(inst.h, self.unit),
+                                     MM(inst.hole_dia, self.unit) or 0,
+                                     rotation)
 
     def _params(self, unit=None):
         return _strip_right(
@@ -390,7 +390,11 @@ class PolygonAperture(Aperture):
                        hole_dia=None if self.hole_dia is None else self.hole_dia*scale)
 
     def to_macro(self):
-        return ApertureMacroInstance(GenericMacros.polygon, self._params(MM))
+        from .aperture_macros.parse import GenericMacros
+        return GenericMacros.polygon(self.n_vertices,
+                                     MM(self.diameter, self.unit),
+                                     MM(self.hole_dia, self.unit),
+                                     self.rotation)
 
     def _params(self, unit=None):
         rotation = self.rotation % (2*math.pi / self.n_vertices)
