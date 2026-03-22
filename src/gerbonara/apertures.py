@@ -266,7 +266,7 @@ class RectangleAperture(Aperture):
         return GenericMacros.rect(MM(self.w, self.unit),
                                   MM(self.h, self.unit),
                                   MM(self.hole_dia, self.unit),
-                                  self.rotation)
+                                  rotation)
 
     def _params(self, unit=None):
         return _strip_right(

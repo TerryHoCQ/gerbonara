@@ -105,6 +105,10 @@ class Circle(Primitive):
         with self.Calculator(self, variable_binding, unit) as calc:
             x, y = rotate_point(calc.x, calc.y, -(deg_to_rad(calc.rotation) + rotation), 0, 0)
             x, y = x+offset[0], y+offset[1]
+
+            if math.isclose(calc.diameter, 0):
+                return []
+
             return [ gp.Circle(x, y, calc.diameter/2, polarity_dark=(bool(calc.exposure) == polarity_dark)) ]
 
     def substitute_params(self, binding, unit):
@@ -144,6 +148,9 @@ class VectorLine(Primitive):
             center_x, center_y = center_x+offset[0], center_y+offset[1]
             rotation += deg_to_rad(calc.rotation) + math.atan2(delta_y, delta_x)
 
+            if math.isclose(calc.width, 0):
+                return []
+
             return [ gp.Rectangle(center_x, center_y, length, calc.width, rotation=rotation,
                         polarity_dark=(bool(calc.exposure) == polarity_dark)) ]
 
@@ -182,6 +189,9 @@ class CenterLine(Primitive):
             x, y = x+offset[0], y+offset[1]
             w, h = calc.width, calc.height
 
+            if math.isclose(calc.width, 0) or math.isclose(calc.height, 0):
+                return []
+
             return [ gp.Rectangle(x, y, w, h, rotation, polarity_dark=(bool(calc.exposure) == polarity_dark)) ]
 
     def substitute_params(self, binding, unit):
@@ -217,7 +227,8 @@ class Polygon(Primitive):
             rotation += deg_to_rad(calc.rotation)
             x, y = rotate_point(calc.x, calc.y, -rotation, 0, 0)
             x, y = x+offset[0], y+offset[1]
-            return [ gp.ArcPoly.from_regular_polygon(calc.x, calc.y, calc.diameter/2, calc.n_vertices, rotation,
+            print('xy', calc.x, calc.y)
+            return [ gp.ArcPoly.from_regular_polygon(x, y, calc.diameter/2, int(calc.n_vertices), rotation,
                         polarity_dark=(bool(calc.exposure) == polarity_dark)) ]
 
     def dilated(self, offset, unit):
@@ -250,6 +261,9 @@ class Moire(Primitive):
             rotation += deg_to_rad(calc.rotation)
             x, y = rotate_point(calc.x, calc.y, -rotation, 0, 0)
             x, y = x+offset[0], y+offset[1]
+
+            if math.isclose(calc.d_outer, 0):
+                return []
 
             pitch = calc.line_thickness + calc.gap_w
             for i in range(int(round(calc.num_circles))):
@@ -296,6 +310,9 @@ class Thermal(Primitive):
             x, y = x+offset[0], y+offset[1]
 
             dark = True
+
+            if math.isclose(calc.d_outer, 0):
+                return []
 
             return [
                     gp.Circle(x, y, calc.d_outer/2, polarity_dark=dark),
@@ -383,6 +400,10 @@ class Outline(Primitive):
             bound_coords = [ rotate_point(calc(x), calc(y), -rotation, 0, 0) for x, y in self.points ]
             bound_coords = [ (x+offset[0], y+offset[1]) for x, y in bound_coords ]
             bound_radii = [None] * len(bound_coords)
+
+            if len(bound_coords) < 3:
+                return []
+
             return [gp.ArcPoly(bound_coords, bound_radii, polarity_dark=(bool(calc.exposure) == polarity_dark))]
 
     def dilated(self, offset, unit):

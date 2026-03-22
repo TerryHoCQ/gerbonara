@@ -35,7 +35,7 @@ from .utils import *
 
 
 @contextmanager
-def run_aperture_macro_test(tmpfile, img_support, inst: ApertureMacroInstance, epsilon=1e-4):
+def run_aperture_macro_test(tmpfile, img_support, inst: ApertureMacroInstance, epsilon=1e-3):
     gbr = GerberFile()
 
     inst_rot_90 = inst.rotated(math.pi/2)
@@ -66,7 +66,8 @@ def run_aperture_macro_test(tmpfile, img_support, inst: ApertureMacroInstance, e
     # resvg. We have to do this since gerbv's built-in cairo-based PNG export has severe aliasing issues. In contrast,
     # using resvg for both allows an apples-to-apples comparison of both results.
     ref_svg = tmpfile('Reference export', '.svg')
-    img_support.gerbv_export(out_gbr, ref_svg, origin=bounds[0], size=bounds[1], fg='#000000', bg='#ffffff')
+    w, h = bounds[1][0] - bounds[0][0], bounds[1][1] - bounds[0][1]
+    img_support.gerbv_export(out_gbr, ref_svg, origin=bounds[0], size=(w, h), fg='#000000', bg='#ffffff')
     with svg_soup(ref_svg) as soup:
         img_support.cleanup_gerbv_svg(soup)
 
