@@ -110,10 +110,15 @@ class ApertureMacro:
             Use your own programmatically defined aperture macros sparingly. While support is getting better, many
             tools, including the expensive, commercial tools that PCB manufacturers use, still have bugs when handling
             aperture macros. When using advanced macros with many primitives or with complex, embedded arithmetic
-            expressions, make sure to carefully check the manufacturing files provided by your PCB fab. If in doubt,
-            consider using :py:meth:`~..apertures.ApertureMacroInstance.calculate_out` to convert an instance of a macro
-            with embedded arithmetic expressions into an instance of a different macro where those expressions were
-            replaced with their actual numeric values.
+            expressions, make sure to carefully check the manufacturing files provided by your PCB fab.
+
+            gerbonara currently handles embedded arithmetic expressions by *always* calculating them out since we have
+            recently seen high-end commercial tooling failing at issues as basic as operator precedence. This increases
+            file sizes very very slightly, but it makes sure that you get correct results.
+
+            This means that you can use gerbonara to calculate out aperture macros and hard-bake their values into the
+            gerber source. This can be useful if you have a file that includes complex macros that some manufacturer's
+            tooling can't handle on its own.
             """
 
     name: str = field(default=None, hash=False, compare=False)
@@ -139,7 +144,7 @@ class ApertureMacro:
             # Construct a mock instance of the dataclass with every field bound to its correpsonding ParameterExpression,
             # then draw() it to get a list of bound macro primitives.
             primitives = tuple(dc(*[ParameterExpression(i+1) for i in range(len(fields(dc)))]).draw())
-            name = macro_name if macro_name else f'GNM{inst_kls.__name__}'
+            name = macro_name if macro_name else f'GNM{kls.__name__}'
 
             # Python allows a lot more unicode in class names than the Gerber spec allows in aperture macro names
             if not re.fullmatch('[._$a-zA-Z][._$a-zA-Z0-9]{0,126}', name):
@@ -269,7 +274,7 @@ class GenericMacros:
         """ Filled circle macro with an optional round hole
         
         :param float diameter: Diameter of the circle
-        :param hole_dia: Diameter of the hole
+        :param hole_dia: Diameter of the hole (optional)
         """
         diameter: float
         hole_dia: float = 0
@@ -284,8 +289,8 @@ class GenericMacros:
 
         :param float w: Width
         :param float h: Height
-        :param float hole_dia: Diameter of the optional round hole
-        :param float rotation: Rotation in clockwise radians
+        :param float hole_dia: Diameter of the round hole (optional)
+        :param float rotation: Rotation in clockwise radians (optional)
         """
         w: float # width
         h: float # height
@@ -303,8 +308,8 @@ class GenericMacros:
         :param float w: Width
         :param float h: Height
         :param float r: Corner radius
-        :param float hole_dia: Diameter of the optional round hole
-        :param float rotation: Rotation in clockwise radians
+        :param float hole_dia: Diameter of the round hole (optional)
+        :param float rotation: Rotation in clockwise radians (optional)
         """
         w: float # width
         h: float # height
@@ -328,8 +333,8 @@ class GenericMacros:
         :param float w: Width of the bottom (wider) edge
         :param float h: Height
         :param float d: Length difference between bottom and top edges; top width = w - d
-        :param float hole_dia: Diameter of the optional round hole
-        :param float rotation: Rotation in clockwise radians
+        :param float hole_dia: Diameter of the round hole (optional)
+        :param float rotation: Rotation in clockwise radians (optional)
         """
         w: float # width
         h: float # height
@@ -355,15 +360,15 @@ class GenericMacros:
         :param float h: Height
         :param float d: Length difference between bottom and top edges; top width = w - d
         :param float margin: Corner rounding radius
-        :param float hole_dia: Diameter of the optional round hole
-        :param float rotation: Rotation in clockwise radians
+        :param float hole_dia: Diameter of the round hole (optional)
+        :param float rotation: Rotation in clockwise radians (optional)
         """
         w: float
         h: float
         d: float # length difference between narrow side (top) and wide side (bottom)
         margin: float
-        hole_dia: float
-        rotation: float
+        hole_dia: float = 0
+        rotation: float = 0
 
         def draw(self):
             rot = self.rotation * -deg_per_rad
@@ -378,7 +383,7 @@ class GenericMacros:
             yield ap.VectorLine('mm', 1, self.margin*2, 
                                self.w/-2,            self.h/-2,
                                self.w/-2+self.d/2,   self.h/2,
-                               rot),
+                               rot)
             yield ap.VectorLine('mm', 1, self.margin*2, 
                                self.w/-2+self.d/2,   self.h/2,
                                self.w/2-self.d/2,    self.h/2,
@@ -413,8 +418,8 @@ class GenericMacros:
 
         :param float w: Total width including end caps; must satisfy w >= h
         :param float h: Height, equal to the end cap diameter
-        :param float hole_dia: Diameter of the optional round hole
-        :param float rotation: Rotation in clockwise radians
+        :param float hole_dia: Diameter of the round hole (optional)
+        :param float rotation: Rotation in clockwise radians (optional)
         """
         w: float
         h: float
@@ -434,8 +439,8 @@ class GenericMacros:
 
         :param int n: Number of sides
         :param float diameter: Diameter of the circumscribed circle
-        :param float hole_dia: Diameter of the optional round hole
-        :param float rotation: Rotation in clockwise radians
+        :param float hole_dia: Diameter of the round hole (optional)
+        :param float rotation: Rotation in clockwise radians (optional)
         """
         n: int
         diameter: float

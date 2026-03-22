@@ -62,7 +62,7 @@ class Expression:
         return expr(other) / self
 
     def __neg__(self):
-        return NegatedExpression(self)
+        return NegatedExpression(self).optimized()
 
     def __pos__(self):
         return self
@@ -339,6 +339,12 @@ class OperatorExpression(Expression):
             # -x [*/] -y == x [*/] y
             case (NegatedExpression(l), (operator.truediv | operator.mul) as op, NegatedExpression(r)):
                 rv = op(l, r)
+            # -x [*/] y == -(x [*/] y)
+            case (NegatedExpression(l), (operator.truediv | operator.mul) as op, r):
+                rv = NegatedExpression(op(l, r))
+            # x [*/] -y == -(x [*/] y)
+            case (l, (operator.truediv | operator.mul) as op, NegatedExpression(r)):
+                rv = NegatedExpression(op(l, r))
             # x + -y == x - y
             case (l, operator.add, NegatedExpression(r)):
                 rv = l-r
