@@ -24,7 +24,7 @@ from scipy.spatial import KDTree
 from gerbonara.excellon import ExcellonFile
 from gerbonara.rs274x import GerberFile
 from gerbonara.cam import FileSettings
-from gerbonara.graphic_objects import Flash
+from gerbonara.graphic_objects import Arc, Flash, Line
 
 from .image_support import *
 from .utils import *
@@ -194,4 +194,109 @@ def test_syntax_error():
 
     assert 'test_syntax_error.exc' in exc_info.value.msg
     assert '12' in exc_info.value.msg # lineno
+
+
+@filter_syntax_warnings
+def test_easyeda_format_supports_explicit_digit_spec():
+    data = '\n'.join([
+        'M48',
+        'INCH,TZ,2.1',
+        'T01C0.0100',
+        '%',
+        'T01',
+        'X11Y11',
+        'M30',
+    ])
+
+    parsed = ExcellonFile.from_string(data)
+    assert parsed.import_settings.number_format == (2, 1)
+
+
+@filter_syntax_warnings
+def test_fmat_1_header_is_accepted():
+    data = '\n'.join([
+        'M48',
+        'INCH,TZ,2.4',
+        'FMAT,1',
+        'T01C0.0100',
+        '%',
+        'T01',
+        'X010000Y010000',
+        'X020000Y010000',
+        'M30',
+    ])
+
+    parsed = ExcellonFile.from_string(data)
+    drills = list(parsed.drills())
+    assert len(drills) == 2
+
+
+@filter_syntax_warnings
+def test_inline_g85_slot_creates_line_slot():
+    data = '\n'.join([
+        'M48',
+        'INCH,TZ',
+        'T01C0.1000',
+        '%',
+        'T01',
+        'X080000Y015000G85X090000Y015000',
+        'M30',
+    ])
+
+    parsed = ExcellonFile.from_string(data)
+    slots = list(parsed.slots())
+    assert len(slots) == 1
+    assert isinstance(slots[0], Line)
+    assert slots[0].x1 == 8.0
+    assert slots[0].y1 == 1.5
+    assert slots[0].x2 == 9.0
+    assert slots[0].y2 == 1.5
+
+
+@filter_syntax_warnings
+def test_circular_interpolation_uses_signed_center_and_direction():
+    data = '\n'.join([
+        'M48',
+        'INCH,TZ',
+        'T01C0.0100',
+        '%',
+        'T01',
+        'G00X000000Y010000',
+        'M15',
+        'G03X-010000Y000000I000000J-010000',
+        'M16',
+        'M30',
+    ])
+
+    parsed = ExcellonFile.from_string(data)
+    slots = list(parsed.slots())
+    assert len(slots) == 1
+    assert isinstance(slots[0], Arc)
+    assert slots[0].cx == 0.0
+    assert slots[0].cy == -1.0
+    assert not slots[0].clockwise
+
+
+@filter_syntax_warnings
+def test_radius_arc_interpolation_converts_to_center_offset():
+    data = '\n'.join([
+        'M48',
+        'INCH,TZ',
+        'T01C0.0100',
+        '%',
+        'T01',
+        'G00X010000Y000000',
+        'M15',
+        'G03X000000Y010000A010000',
+        'M16',
+        'M30',
+    ])
+
+    parsed = ExcellonFile.from_string(data)
+    slots = list(parsed.slots())
+    assert len(slots) == 1
+    assert isinstance(slots[0], Arc)
+    assert math.isclose(slots[0].cx, -1.0)
+    assert math.isclose(slots[0].cy, 0.0, abs_tol=1e-12)
+    assert not slots[0].clockwise
 

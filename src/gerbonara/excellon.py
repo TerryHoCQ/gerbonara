@@ -890,12 +890,17 @@ class ExcellonParser(object):
                 # from https://math.stackexchange.com/a/1781546
                 if a_s:
                     raise ValueError('Negative arc radius given')
-                r = settings.parse_gerber_value(a)
+                r = self.settings.parse_gerber_value(a)
                 x1, y1 = start
                 x2, y2 = end
                 dx, dy = (x2-x1)/2, (y2-y1)/2
                 x0, y0 = x1+dx, y1+dy
-                f = math.hypot(dx, dy) / math.sqrt(r**2 - a**2)
+                d = math.hypot(dx, dy)
+                if d == 0:
+                    raise ValueError('Arc radius notation requires distinct start and end points')
+                if r < d:
+                    raise ValueError('Arc radius too small for endpoint distance')
+                f = math.sqrt(r**2 - d**2) / d
                 if clockwise:
                     cx = x0 + f*dy
                     cy = y0 - f*dx
@@ -905,16 +910,16 @@ class ExcellonParser(object):
                 i, j = cx-start[0], cy-start[1]
 
             else: # explicit center given
-                i = settings.parse_gerber_value(i)
+                i = self.settings.parse_gerber_value(i) or 0
                 if i_s:
                     i = -i
-                j = settings.parse_gerber_value(j)
+                j = self.settings.parse_gerber_value(j) or 0
                 if j_s:
-                    j = -i
+                    j = -j
 
-            self.objects.append(Arc(*start, *end, i, j, True, self.active_tool, unit=self.settings.unit))
+            self.objects.append(Arc(*start, *end, i, j, clockwise, self.active_tool, unit=self.settings.unit))
 
-    @exprs.match(r'(M71|METRIC|M72|INCH)(,LZ|,TZ)?(,0*\.0*)?')
+    @exprs.match(r'(M71|METRIC|M72|INCH)(,LZ|,TZ)?(,([0-9]+\.[0-9]+|0*\.0*))?')
     def parse_easyeda_format(self, match):
         metric = match[1] in ('METRIC', 'M71')
 
@@ -927,7 +932,10 @@ class ExcellonParser(object):
         # This is used by newer autodesk eagles, fritzing and diptrace
         if match[3]:
             integer, _, fractional = match[3][1:].partition('.')
-            self.settings.number_format = len(integer), len(fractional)
+            if integer.strip('0') or fractional.strip('0'):
+                self.settings.number_format = int(integer), int(fractional)
+            else:
+                self.settings.number_format = len(integer), len(fractional)
 
         elif self.settings.number_format == (None, None) and not metric and not self.found_kicad_format_comment:
             self.warn('Using implicit number format from bare "INCH" statement. This is normal for Fritzing, Diptrace, Geda and pcb-rnd.')
@@ -953,10 +961,10 @@ class ExcellonParser(object):
     @exprs.match('(FMAT|VER),?([0-9]*)')
     def handle_command_format(self, match):
         if match[1] == 'FMAT':
-            # We do not support integer/fractional decimals specification via FMAT because that's stupid. If you need this,
-            # please raise an issue on our issue tracker, provide a sample file and tell us where on earth you found that
-            # file.
-            if match[2] not in ('', '2'):
+            # We only use FMAT as a compatibility marker. Version 1 drill files encountered in the wild still use the
+            # same coordinate and routing statements that we already support, so rejecting the header unconditionally
+            # needlessly breaks otherwise parseable files.
+            if match[2] not in ('', '1', '2'):
                 raise SyntaxError(f'Unsupported FMAT format version {match[2]}')
 
         else: # VER
@@ -984,6 +992,19 @@ class ExcellonParser(object):
 
         else:
             self.warn('Bare coordinate after end of file')
+
+    @exprs.match(xy_coord + 'G85' + xy_coord)
+    def handle_g85_slot(self, match):
+        if self.program_state == ProgramState.HEADER:
+            return
+
+        self.do_move(match.groups()[:4])
+        start, end = self.do_move(match.groups()[4:])
+
+        if not self.ensure_active_tool():
+            return
+
+        self.objects.append(Line(*start, *end, self.active_tool, unit=self.settings.unit))
 
     @exprs.match(r'DETECT,ON|ATC,ON|M06')
     def parse_zuken_legacy_statements(self, match):
